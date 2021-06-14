@@ -1,0 +1,624 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+    <http:listener-config name="covidapi-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="covidapi-config" api="covidapi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <api-gateway:autodiscovery apiId="16966476" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="48aa5bb5-d3c8-4442-a5bd-430de0617c19" flowRef="covidapi-main" />
+	<flow name="covidapi-main">
+        <http:listener config-ref="covidapi-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="covidapi-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="covidapi-console">
+        <http:listener config-ref="covidapi-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="covidapi-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\country\(countryname):covidapi-config">
+        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+            <ee:variables>
+                <ee:set-variable variableName="countryname">attributes.uriParams.'countryname'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+    ID: "5ccda4f2-6435-45e9-8ac9-275d0a260b0c",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 0,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 0,
+    Date: "2020-03-01T00:00:00Z"
+  }, 
+  {
+    ID: "08f2a13d-d80d-4348-a921-307f1236b363",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 0,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 0,
+    Date: "2020-03-02T00:00:00Z"
+  }, 
+  {
+    ID: "e27d797e-c347-4bd3-8f54-7ff9ae67e9f5",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 0,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 0,
+    Date: "2020-03-03T00:00:00Z"
+  }, 
+  {
+    ID: "e434d68d-ac5a-48ce-9c9e-e82b4eb9d115",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 0,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 0,
+    Date: "2020-03-04T00:00:00Z"
+  }, 
+  {
+    ID: "14d37736-7f13-4bcd-998a-0251f6da815b",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 1,
+    Date: "2020-03-05T00:00:00Z"
+  }, 
+  {
+    ID: "a710b8fa-b77e-494d-bc8a-21a015c8100b",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 1,
+    Date: "2020-03-06T00:00:00Z"
+  }, 
+  {
+    ID: "a9589e59-8bd8-42ed-a3ef-6f8189c27978",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 1,
+    Date: "2020-03-07T00:00:00Z"
+  }, 
+  {
+    ID: "9ece5bec-3197-414f-bf53-9705e2d7770a",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 3,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 3,
+    Date: "2020-03-08T00:00:00Z"
+  }, 
+  {
+    ID: "5e7fce18-aaec-4cae-8de7-eb5b60e2b7bc",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 3,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 3,
+    Date: "2020-03-09T00:00:00Z"
+  }, 
+  {
+    ID: "e76df44c-fbc2-4dbc-b71a-6923a8d8352a",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 7,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 7,
+    Date: "2020-03-10T00:00:00Z"
+  }, 
+  {
+    ID: "9d69baef-e695-4109-b414-7e08eb395c73",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 13,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 13,
+    Date: "2020-03-11T00:00:00Z"
+  }, 
+  {
+    ID: "95dd2d39-de37-4d68-90b0-f06fdacc514b",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 17,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 17,
+    Date: "2020-03-12T00:00:00Z"
+  }, 
+  {
+    ID: "420ec446-1dbb-4b83-8945-30529e3c3848",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 24,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 24,
+    Date: "2020-03-13T00:00:00Z"
+  }, 
+  {
+    ID: "d9eb6ba0-8b20-4a85-9881-f3890201d9f5",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 38,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 38,
+    Date: "2020-03-14T00:00:00Z"
+  }, 
+  {
+    ID: "2fddd271-e9e5-404a-a993-b02d1b429700",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 51,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 51,
+    Date: "2020-03-15T00:00:00Z"
+  }, 
+  {
+    ID: "759c63ed-23b5-4198-9402-180ce7f07da4",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 62,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 62,
+    Date: "2020-03-16T00:00:00Z"
+  }, 
+  {
+    ID: "cee83163-fc69-4238-b428-2e5986aa36fd",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 62,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 62,
+    Date: "2020-03-17T00:00:00Z"
+  }, 
+  {
+    ID: "d62f611f-7fbd-4c31-89fc-74946b911b73",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 116,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 116,
+    Date: "2020-03-18T00:00:00Z"
+  }, 
+  {
+    ID: "5c42c5e0-7678-4197-8d46-7cc828ea9e1f",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 150,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 150,
+    Date: "2020-03-19T00:00:00Z"
+  }, 
+  {
+    ID: "b0af7f22-08bf-45b1-a4ad-d3b1e3aecfab",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 202,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 202,
+    Date: "2020-03-20T00:00:00Z"
+  }, 
+  {
+    ID: "f4c6c2e9-ea2f-400d-88a1-3a6a1cf2fce3",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 240,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 240,
+    Date: "2020-03-21T00:00:00Z"
+  }, 
+  {
+    ID: "a75da288-776f-41b6-9e6a-93e1d95a01bf",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 274,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 274,
+    Date: "2020-03-22T00:00:00Z"
+  }, 
+  {
+    ID: "05555676-8639-4140-8fa5-d01a3a5989ba",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 402,
+    Deaths: 0,
+    Recovered: 0,
+    Active: 402,
+    Date: "2020-03-23T00:00:00Z"
+  }, 
+  {
+    ID: "4f33c708-f17a-44e7-9942-577b05bb1c5f",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 554,
+    Deaths: 0,
+    Recovered: 4,
+    Active: 550,
+    Date: "2020-03-24T00:00:00Z"
+  }, 
+  {
+    ID: "a1d4a57f-e2de-478d-97e8-54055662a8f4",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 709,
+    Deaths: 0,
+    Recovered: 12,
+    Active: 697,
+    Date: "2020-03-25T00:00:00Z"
+  }, 
+  {
+    ID: "b93bbd77-873b-434b-9e5c-35477462f3cd",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 927,
+    Deaths: 0,
+    Recovered: 12,
+    Active: 915,
+    Date: "2020-03-26T00:00:00Z"
+  }, 
+  {
+    ID: "8f1d2fb6-df16-46ee-8d3a-a7361ec73b0d",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1170,
+    Deaths: 1,
+    Recovered: 31,
+    Active: 1138,
+    Date: "2020-03-27T00:00:00Z"
+  }, 
+  {
+    ID: "49817e52-b08f-4539-90dd-f039fb0ef053",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1187,
+    Deaths: 1,
+    Recovered: 31,
+    Active: 1155,
+    Date: "2020-03-28T00:00:00Z"
+  }, 
+  {
+    ID: "54e023c8-45f7-40d8-9f6f-6e279fa50154",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1280,
+    Deaths: 2,
+    Recovered: 31,
+    Active: 1247,
+    Date: "2020-03-29T00:00:00Z"
+  }, 
+  {
+    ID: "4b7577fa-54ae-435a-90a5-1724fd886b87",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1326,
+    Deaths: 3,
+    Recovered: 31,
+    Active: 1292,
+    Date: "2020-03-30T00:00:00Z"
+  }, 
+  {
+    ID: "a76ccdf8-84e1-4e33-a7a5-0dea0fbd7de9",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1353,
+    Deaths: 5,
+    Recovered: 31,
+    Active: 1317,
+    Date: "2020-03-31T00:00:00Z"
+  }, 
+  {
+    ID: "32f94918-4886-4413-892b-34357e12b84b",
+    Country: "South Africa",
+    CountryCode: "ZA",
+    Province: "",
+    City: "",
+    CityCode: "",
+    Lat: "-30.56",
+    Lon: "22.94",
+    Confirmed: 1380,
+    Deaths: 5,
+    Recovered: 50,
+    Active: 1325,
+    Date: "2020-04-01T00:00:00Z"
+  }
+]]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>
